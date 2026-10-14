@@ -308,3 +308,40 @@ $$;
 
 ---
 
+### 7.2 TabPFN-3.5 tabular pipeline
+
+Prior Labs rewards TabPFN *inside a wider agent* — not as a standalone notebook. Here TabPFN owns all numeric judgment; Gemma never does arithmetic.
+
+**Input CSV contract (expected headers):**
+
+```csv
+ticket_id,task_title,task_category,estimated_hours,actual_hours_logged,client_revision_rounds,files_touched_count,unplanned_flag,notes
+JIRA-101,Build landing hero,frontend,4,4.5,1,6,0,per Section 3.1
+JIRA-102,Add SSO + audit logs,backend,0,11,3,28,1,client asked on Slack Tue
+```
+
+**Derived feature vector X per row (9 cols):**
+
+| Feature | Type | How computed |
+|---|---|---|
+| task_category | categorical | frontend/backend/devops/design/compliance/database |
+| estimated_hours | float | from CSV (0.0 if unplanned) |
+| actual_hours_logged | float | from CSV |
+| overrun_ratio | float | `actual / max(estimated, 0.5)` |
+| client_revision_rounds | int | from CSV |
+| files_touched_count | int | from CSV / git stat |
+| unplanned_flag | 0/1 | from CSV (1 if added post-kickoff) |
+| min_sow_semantic_distance | float 0–1 | cosine distance to closest Tiger clause |
+| matched_exclusion_clause | 0/1 | 1 if top Tiger hit has `is_exclusion=TRUE` |
+
+**Runtime logic:**
+
+- Ship `data/baseline_agency_tickets.csv` with 120 labeled rows (0 = in-scope normal, 1 = creep/overrun) covering all 6 categories.
+- At audit time: `TabPFNClassifier.fit(X_baseline, y_baseline)` in-context (<1s via Prior Labs API), then `predict_proba(X_uploaded)` → `scope_leakage_probability`.
+- Companion `TabPFNRegressor` on same X predicts `predicted_fair_hours` for under-estimated tickets.
+- Threshold: `>0.65` = route to SerpApi + Gemma OUT_OF_SCOPE candidate; `0.35–0.65` = GREY_AREA; `<0.35` = likely IN_SCOPE (still needs Gemma clause check).
+
+Why this matters for judging: show a scatter (overrun_ratio vs leakage) where LLM-only baseline mis-scores math-heavy rows and TabPFN nails them.
+
+---
+
