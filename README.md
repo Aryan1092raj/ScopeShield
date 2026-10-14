@@ -456,3 +456,74 @@ Init with `sentry_sdk.init(dsn=..., traces_sample_rate=1.0, ai_monitoring=True)`
 
 ---
 
+## 8. Demo plan — 1-click judge path
+
+Judges won't have a CSV. Ship the demo *in the UI*, not in setup docs.
+
+**Bundled files (local only until code phase):**
+
+- `data/demo_sow_contract.md` — 14-clause sample SOW: React marketing site, 3 revision rounds, "SSO / DevOps / extra locales explicitly out of scope (§5.2, §7.1)."
+- `data/demo_weekly_git_jira.csv` — 12 rows, 4 hidden leaks: (1) SSO + audit logs 11h, (2) Hindi locale pack 6h, (3) prod K8s hotfix 5h, (4) 5th revision round on hero 4h.
+
+**Demo script (20 seconds):**
+
+1. Land on `scopeshield.tech` → click **"Run Real Agency Audit (no upload)"**.
+2. Ledger shows 26h logged → 26h? No: 26 total, 26? Actually 12 rows ≈ 48h total, 26h OUT_OF_SCOPE, **~$1,820 recoverable** at market rates.
+3. Expand JIRA-102 → see §5.2 quote: "Single sign-on (SSO) ... expressly excluded" + TabPFN 0.91 + SerpApi $72/hr.
+4. Scroll to change-order email → copy → telemetry drawer → Sentry trace link.
+
+**Talking points:** "We eat $1,820 here. One click turns it into a polite ask with market receipts — and no client data ever left the laptop."
+
+## 9. Build timeline (4.5 days)
+
+| Day | Ship | Owner signal |
+|---|---|---|
+| Thu AM | Tiger DDL + SOW chunker + embedder + `/sow` route | RRF returns top-3 on 3 test rows |
+| Thu PM | CSV parser + TabPFN feature builder + `predict_proba` + baseline CSV | Leakage scores on demo CSV |
+| Fri AM | Tinker dataset 250 + LoRA + Ollama serve + strict-JSON client | `benchmark_tinker.py` table |
+| Fri PM | SerpApi cache + Gemma synthesis + `/audit` + ledger UI | End-to-end demo audit works |
+| Fri night | Render blueprint + `.tech` DNS + Sentry spans + telemetry drawer | Public URL + trace screenshot |
+| Sat AM | Demo button + email copy + PDF export + DEV draft | Judge-ready + User #1 quote |
+| Sat PM | Buffer: latency pass, fallback rates, README polish | Submit |
+
+## 10. Risks + mitigations
+
+| Risk | Likelihood | Mitigation |
+|---|---|---|
+| Gemma VRAM too high on laptop | Med | Fallback `gemma-3-4b-it` Q4; cloud vLLM endpoint env-switch |
+| TabPFN API quota / latency | Low | Cache scores by row hash; pinned 120-row baseline, batch predict |
+| SerpApi quota exhausted live | Med | 24h cache + static fallback table + show "cached" badge |
+| PDF parse mangles clause numbers | Med | Prefer Markdown SOW; PDF via `pypdf` + regex repair, show clause count |
+| Judges confused by leakage % | Low | Tooltip: ">65% = likely unbilled; cite clause, not just score" |
+| NDA pushback ("you store contracts?") | Low | Hash + optional auto-delete toggle; embeddings only, no raw text retention |
+
+## 11. DEV post outline (Side Hustle)
+
+Title: *"ScopeShield: I stopped working for free with Gemma + TabPFN (and kept client data off OpenAI)"*
+
+1. Hook: the $1,820 week I ate.
+2. Why open won (the §4.5 table — copy verbatim).
+3. Architecture diagram + 4-span Sentry screenshot.
+4. Tiger RRF SQL snippet + one retrieval example.
+5. TabPFN vs LLM math anecdote + scatter.
+6. Tinker benchmark table (validity / F1 / tokens).
+7. Live demo GIF (1-click audit → email copy).
+8. User #1 quote + "$19/mo would pay" + what they asked next.
+9. Repo + `scopeshield.tech` + costs ($X/mo infra, $0/token).
+10. Agent session embed + Entire/Copilot telemetry note.
+
+## 12. What to do next (after README)
+
+```bash
+# lift ignore when ready for code (edit .gitignore):
+# comment out the `*` + `*.md` whitelist lines, then:
+git add backend/ frontend/ scripts/ data/demo_* render.yaml
+git commit -m "Scaffold FastAPI and React skeleton"
+```
+
+**Do not commit:** real client SOWs/PDFs, `.env` keys (TabPFN, SerpApi, Sentry DSN), `*.csv` beyond `demo_*`.
+
+---
+
+*ScopeShield — shield your scope, bill your worth. Built for DEV Side Hustle: open weights at the core, NDA-safe by design, $19/mo viable because tokens cost $0.*
+
