@@ -85,6 +85,10 @@ export default function App() {
     a.click();
   }
 
+  function downloadLedger() {
+    window.open(`${API}/api/demo/ledger.csv`, "_blank");
+  }
+
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -142,6 +146,12 @@ export default function App() {
             </div>
 
             <div className="mt-6 overflow-hidden rounded-xl border bg-white">
+              <div className="flex items-center gap-2 border-b bg-slate-100 px-4 py-2">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">Scope audit ledger</h3>
+                <button onClick={downloadLedger} className="ml-auto flex items-center gap-1 rounded-lg border bg-white px-3 py-1 text-xs font-semibold hover:bg-slate-50">
+                  <Download className="h-3.5 w-3.5" /> Ledger CSV
+                </button>
+              </div>
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-100 text-xs uppercase text-slate-500">
                   <tr><th className="px-4 py-2">Ticket</th><th className="px-4 py-2">Verdict</th><th className="px-4 py-2">Leak</th><th className="px-4 py-2">Clause</th><th className="px-4 py-2 text-right">Recover $</th></tr>
