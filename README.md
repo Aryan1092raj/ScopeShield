@@ -345,3 +345,37 @@ Why this matters for judging: show a scatter (overrun_ratio vs leakage) where LL
 
 ---
 
+### 7.3 Tinker + Gemma fine-tuning & benchmark
+
+To win Gemma ($200) + Tinker ($200) you must *show measured improvement over baseline* — not just "we used Gemma."
+
+**Base failure modes to fix:**
+
+1. Raw `gemma-2-9b-it` wraps JSON in chatty preamble ("Sure! Here's your audit...") → breaks `json.loads`.
+2. Raw model is sycophantic — labels clear exclusions as "GREY_AREA to be safe."
+
+**Dataset protocol (2 hrs, huge payoff):**
+
+- Generate 250 train + 50 holdout pairs: input = (work-log row + top-3 clauses + TabPFN score) → output = strict JSON verdict + change-order sentence.
+- Cover: frontend/backend/devops/design/compliance/database × IN/GREY/OUT, with exclusion-clause traps (e.g., "SSO explicitly out of scope in §5.2").
+- Script: `scripts/generate_tinker_dataset.py` → `data/tinker_sow_pairs.jsonl` (local only).
+
+**LoRA via Tinker:**
+
+- Base: `google/gemma-2-9b-it` (alt: `gemma-3-4b-it` if VRAM tight). Rank 16, 3 epochs, strict-JSON mask loss.
+- Adapter id: `gemma-2-9b-tinker-sow-v1`. Serve via Ollama (`Modelfile` with `ADAPTER`) or vLLM `--enable-lora`.
+- System prompt pins schema: "Output ONLY valid JSON matching AuditedWorkItem. No preamble. Cite section_number verbatim."
+
+**Benchmark protocol — `scripts/benchmark_tinker.py` on 50 holdout:**
+
+| Metric | Base Gemma | Tinker-tuned | Target delta |
+|---|---|---|---|
+| Strict JSON validity % | ~68–75% | ~96–99% | +25pp (parser breakage → ~0) |
+| Macro F1 (IN/GREY/OUT) | ~0.71 | ~0.86 | +0.15 (esp. OUT recall) |
+| Mean output tokens / audit | ~420 | ~270 | −35% (no preamble = faster + cheaper) |
+| Mean latency / row (M1 / T4) | ~2.1s | ~1.4s | −33% |
+
+Embed this table + confusion matrix in DEV post — it's your Gemma+Tinker prize evidence.
+
+---
+
