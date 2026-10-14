@@ -8,6 +8,18 @@
 [![Open AI](https://img.shields.io/badge/open--AI-Gemma%20%2B%20Tinker%20%2B%20TabPFN-green)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
+## 0. Quickstart (code phase — verified)
+
+```bash
+make setup          # pip + npm install
+make test           # 7/7 green: 4/4 leaks, $1845, $26h OOS
+make bench          # Tinker 250+50 pairs → validity/F1 table
+make api            # uvicorn :8000 → GET /api/demo/audit
+make web            # vite :5173 → Run Real Agency Audit
+```
+
+**Verified numbers:** `53.0h logged → 26.0h out-of-scope → $1,845 recoverable` (JIRA-105/106/107/108). Frontend `npm run build` clean (1.25s, 1569 modules).
+
 ## 1. Why the name ScopeShield?
 
 I needed a name that a freelancer would remember, trust, and put on an invoice.

@@ -23,6 +23,7 @@ build/
 .vite/
 *.log
 *.tsbuildinfo
+package-lock.json
 
 # OS / IDE
 .DS_Store
