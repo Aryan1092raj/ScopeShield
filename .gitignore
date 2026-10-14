@@ -39,6 +39,7 @@ Thumbs.db
 *.dump
 data/uploads/
 data/raw/
+data/tinker_*.jsonl
 !data/demo_*.csv
 !data/demo_*.md
 !data/baseline_*.csv
