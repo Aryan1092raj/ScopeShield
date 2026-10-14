@@ -1,0 +1,13 @@
+ticket_id,task_title,task_category,estimated_hours,actual_hours_logged,client_revision_rounds,files_touched_count,unplanned_flag,notes
+JIRA-101,Build landing hero per Section 3.1,frontend,4,4.5,1,6,0,hero v1 within revision limit
+JIRA-102,Wire Sanity CMS for 5 pages,backend,8,8.5,1,12,0,per Section 3.2
+JIRA-103,Add Plausible analytics snippet,frontend,2,1.5,0,3,0,per Section 3.3
+JIRA-104,Store locator page polish round 2,frontend,3,3.0,2,5,0,within 3-round policy Section 4.2
+JIRA-105,Add SSO with Google + audit logs,backend,0,11.0,3,28,1,client asked on Slack Tue — Section 5.2 excludes SSO and audit logging
+JIRA-106,Build Hindi locale pack + translations,database,0,6.0,2,18,1,client requested Hindi pack — Section 7.1 excludes locales
+JIRA-107,Prod K8s deploy + uptime fix,devops,0,5.0,1,9,1,infra hotfix — Section 7.1 excludes prod DevOps
+JIRA-108,Hero 5th revision round after approval,design,2,4.0,5,7,0,rounds beyond 3 are billable per Section 4.2
+JIRA-109,Manager login email password 5 accounts,backend,5,5.0,1,8,0,per Section 5.1 in scope
+JIRA-110,Contact form spam filter tweak,backend,1,1.0,0,2,0,minor in-scope polish
+JIRA-111,About page copy update from client doc,frontend,1,1.0,1,2,0,English content per Section 6.1
+JIRA-112,CMS image upload bugfix,backend,2,2.5,1,4,0,bugfix within CMS scope Section 3.2
