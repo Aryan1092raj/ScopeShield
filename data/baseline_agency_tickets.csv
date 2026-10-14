@@ -1,0 +1,25 @@
+ticket_id,task_title,task_category,estimated_hours,actual_hours_logged,client_revision_rounds,files_touched_count,unplanned_flag,min_sow_semantic_distance,matched_exclusion_clause,label
+BASE-001,Landing hero build,frontend,4,4.2,1,6,0,0.18,0,0
+BASE-002,Catalog page CMS wiring,backend,6,6.5,1,10,0,0.22,0,0
+BASE-003,Analytics snippet install,frontend,2,1.8,0,3,0,0.15,0,0
+BASE-004,Contact page revision round 2,frontend,3,3.1,2,5,0,0.20,0,0
+BASE-005,Manager login accounts setup,backend,5,5.2,1,8,0,0.25,0,0
+BASE-006,CMS text edit training call,backend,1,1.0,0,2,0,0.12,0,0
+BASE-007,About page copy swap,frontend,1,1.1,1,2,0,0.16,0,0
+BASE-008,Store locator polish,frontend,3,3.4,2,5,0,0.21,0,0
+BASE-009,Image upload bugfix CMS,backend,2,2.4,1,4,0,0.24,0,0
+BASE-010,Contact spam filter tweak,backend,1,1.0,0,2,0,0.14,0,0
+BASE-011,Footer links update,frontend,1,0.8,0,2,0,0.11,0,0
+BASE-012,SEO meta tags 5 pages,frontend,2,2.0,0,5,0,0.19,0,0
+BASE-013,SSO Google OAuth integration,backend,0,10.5,3,26,1,0.78,1,1
+BASE-014,SOC2 audit logging pipeline,compliance,0,9.0,2,20,1,0.81,1,1
+BASE-015,K8s prod deploy + rollback,devops,0,6.5,1,11,1,0.74,1,1
+BASE-016,Hindi locale pack build,database,0,6.0,2,17,1,0.69,1,1
+BASE-017,Role-based admin permissions,backend,0,8.0,2,22,1,0.76,1,1
+BASE-018,5th hero revision after signoff,design,2,4.5,5,7,0,0.55,0,1
+BASE-019,Extra locale Tamil pack,database,0,5.5,1,15,1,0.71,1,1
+BASE-020,CDN custom config + SLA,devops,0,4.5,1,8,1,0.68,1,1
+BASE-021,Dark mode full site rework,frontend,0,7.0,3,19,1,0.62,0,1
+BASE-022,Mobile app push notifications,backend,0,9.5,2,24,1,0.79,1,1
+BASE-023,Client dashboard exports CSV,backend,3,7.5,3,16,1,0.58,0,1
+BASE-024,Accessibility audit remediation,compliance,2,6.0,2,12,1,0.51,0,1
