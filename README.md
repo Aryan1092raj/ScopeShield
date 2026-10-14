@@ -163,3 +163,83 @@ Empty/error states: bad CSV columns → show expected header template + download
 
 ---
 
+## 6. Architecture — System Design
+
+### 6.1 High-level topology & pipeline
+
+```text
++-------------------------------------------------------------------+
+| CLIENT (scopeshield.tech)                                         |
+| React 19 + Vite + Tailwind | SOW uploader | CSV dropzone | Ledger |
++----------------------------------+------------------------------+
+                                   | HTTPS multipart / JSON
+                                   v
++-------------------------------------------------------------------+
+| API LAYER (Render Web Service)                                    |
+| FastAPI async + Sentry tracing (span-level latency / tokens)      |
++-------+---------------------+-------------------+-----------------+
+        | 1. Hybrid RAG       | 2. Tabular ML     | 3. Market comps
+        v                     v                   v
++---------------+   +-----------------+   +-------------------------+
+| TIGER DATA    |   | TABPFN-3.5      |   | SERPAPI                 |
+| pgvector+tsv  |   | Prior Labs FM   |   | freelance rate lookup   |
+| RRF fusion    |   | overrun risk    |   | cached 24h              |
++-------+-------+   +--------+--------+   +------------+------------+
+        |                    |                         |
+        +--------------------+-------------------------+
+                             | 4. Enriched context
+                             v
++-------------------------------------------------------------------+
+| OPEN-WEIGHT LAYER (local / self-hosted)                           |
+| Gemma-2-9B-IT (or Gemma-3-4B-IT) via Ollama/vLLM + Tinker LoRA    |
++-------------------------------------------------------------------+
+```
+
+**Execution order per audit:**
+
+1. Parse SOW → chunk by `Section X.Y` → embed → upsert to Tiger.
+2. Parse CSV → validate headers → build feature rows.
+3. For each row: Tiger RRF top-3 clauses (semantic + keyword).
+4. TabPFN-3.5 `predict_proba` on 9-feature vector + SOW distance.
+5. If leakage >0.65: SerpApi rate lookup (cache-first).
+6. Gemma+Tinker strict-JSON verdict + email + change-order markdown.
+7. Return ledger + totals + telemetry (Sentry trace id).
+
+### 6.2 Stack specification
+
+- **Frontend:** React 19, Vite, Tailwind CSS, Lucide icons (Render Static Site on `.tech`).
+- **Backend:** Python 3.11+, FastAPI, Pydantic v2, asyncpg / psycopg[binary] (Render Web Service).
+- **DB:** Tiger Data Postgres + `pgvector` + `pg_trgm` (hybrid search, no external orchestrator).
+- **Tabular FM:** `tabpfn-client` (Prior Labs API, free non-commercial key) — Classifier + Regressor.
+- **LLM:** `google/gemma-2-9b-it` (fallback `gemma-3-4b-it`), served via Ollama / vLLM locally; Tinker LoRA adapter `gemma-2-9b-tinker-sow-v1`.
+- **Embeddings:** `nomic-embed-text` 768-d (local via Ollama) to keep NDA text in-VPC.
+- **Search grounding:** `google-search-results` (SerpApi) for `freelance <category> hourly rate 2026`.
+- **Observability:** `sentry-sdk[fastapi]` with `ai_monitoring=True`, 4 named spans.
+- **Build telemetry:** Entire / Copilot session export for DEV post appendix.
+
+### 6.3 Planned repo layout (code phase, not yet committed)
+
+```text
+scopeshield/
+├── backend/
+│   ├── main.py            # FastAPI + Sentry init + CORS + /audit routes
+│   ├── db_tiger.py        # pool + RRF hybrid search function caller
+│   ├── engine_tabpfn.py   # feature builder + TabPFN predict_proba
+│   ├── engine_serp.py     # SerpApi lookup with in-memory cache
+│   ├── engine_gemma.py    # Ollama/vLLM client, strict-JSON retry
+│   └── schemas.py         # Pydantic v2 contracts (see §8)
+├── data/                  # local only, never commit real client data
+│   ├── baseline_agency_tickets.csv
+│   ├── demo_sow_contract.md
+│   └── demo_weekly_git_jira.csv
+├── scripts/
+│   ├── generate_tinker_dataset.py
+│   └── benchmark_tinker.py
+├── frontend/              # React + Vite + Tailwind ledger UI
+└── render.yaml            # 1-click Render blueprint
+```
+
+> Note: per current `.gitignore`, only `README.md` is tracked. Code/data dirs stay local until you explicitly lift the ignore.
+
+---
+
