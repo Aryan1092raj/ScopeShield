@@ -12,11 +12,13 @@ from .config import settings
 
 
 def classify_stub(leakage: float, matched_exclusion: bool, overrun: float, revisions: int) -> tuple[str, str]:
-    if matched_exclusion or leakage >= 0.65:
-        return "OUT_OF_SCOPE", "Top SOW clause is an exclusion or leakage exceeds 0.65 threshold."
+    # Exclusion hit or high leakage → OUT. 5th revision (revisions>3 + overrun) → OUT per §4.2.
+    if matched_exclusion or leakage >= 0.65 or (revisions > 3 and overrun > 1.5):
+        return "OUT_OF_SCOPE", "Top SOW clause is an exclusion, leakage exceeds 0.65, or revisions exceed paid policy."
     if leakage >= 0.35 or revisions > 3 or overrun > 1.5:
         return "GREY_AREA", "Signals conflict — needs client clarification before billing."
     return "IN_SCOPE", "Work matches an in-scope deliverable within revision policy."
+
 
 
 def judge_row_stub(ticket: dict, clause: dict, leakage: float, overrun: float) -> dict:
