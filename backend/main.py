@@ -10,7 +10,7 @@ from pathlib import Path
 import sentry_sdk
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 try:
     from sentry_sdk.integrations.fastapi import FastApiIntegration
@@ -148,3 +148,18 @@ async def demo_audit():
         trace_id = getattr(txn, "trace_id", None)
         result = await audit_service.run_audit("BrightKart Website", "BrightKart Retail", clauses, rows, trace_id=trace_id)
     return JSONResponse(result)
+
+
+@app.get("/api/demo/ledger.csv", response_class=PlainTextResponse)
+async def demo_ledger_csv():
+    """FR-8: download demo ledger as CSV for finance teams."""
+    result = await demo_audit()
+    import json as _json
+
+    body = _json.loads(result.body.decode())
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=["ticket_id", "task_title", "verdict", "tabpfn_leakage_probability", "violated_or_matched_clause", "market_hourly_rate_usd", "recoverable_amount_usd"])
+    w.writeheader()
+    for it in body["items"]:
+        w.writerow({k: it[k] for k in w.fieldnames})
+    return PlainTextResponse(buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=scopeshield-ledger.csv"})

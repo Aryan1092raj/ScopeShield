@@ -82,3 +82,11 @@ def test_empty_sow_rejected_400():
     assert r.status_code == 400
 
 
+def test_demo_ledger_csv_download():
+    r = client.get("/api/demo/ledger.csv")
+    assert r.status_code == 200
+    assert "ticket_id" in r.text
+    assert "JIRA-105" in r.text  # hidden leak present in export
+
+
+
