@@ -20,6 +20,18 @@ make web            # vite :5173 → Run Real Agency Audit
 
 **Verified numbers:** `53.0h logged → 26.0h out-of-scope → $1,845 recoverable` (JIRA-105/106/107/108). Frontend `npm run build` clean (1.25s, 1569 modules).
 
+**Live repo:** https://github.com/Aryan1092raj/ScopeShield — `main` tracks `origin/main`.
+
+### Deploy (Render + .tech)
+
+```bash
+# 1. Tiger Data: run README §7.1 DDL, then:
+psql $DATABASE_URL -f scripts/seed_tiger.sql
+# 2. Render: New → Blueprint → point at render.yaml (api + static web)
+# 3. Env on Render: DATABASE_URL, TABPFN_API_KEY, SERPAPI_API_KEY, SENTRY_DSN
+# 4. Domain: Render static site → Custom Domain → scopeshield.tech
+```
+
 ## 1. Why the name ScopeShield?
 
 I needed a name that a freelancer would remember, trust, and put on an invoice.
