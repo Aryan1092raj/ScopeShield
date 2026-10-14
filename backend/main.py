@@ -123,8 +123,12 @@ async def audit_project(project_id: str, file: UploadFile = File(...)):
     if not proj["clauses"]:
         raise HTTPException(400, "upload SOW first")
     rows = _parse_csv_bytes(await file.read())
-    if not rows:
-        raise HTTPException(400, "CSV is empty — upload weekly work-log rows")
+    try:
+        from .engine_tabpfn import validate_csv_rows
+
+        validate_csv_rows(rows)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     with _trace("ScopeShield_Full_Audit") as txn:
         with _span("db.vector.hybrid_rrf", "Tiger Hybrid Retrieval"):
             pass  # real spans live inside audit_service; kept flat for trace clarity

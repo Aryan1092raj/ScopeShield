@@ -18,7 +18,33 @@ FEATURES = [
     "matched_exclusion_clause",
 ]
 
+REQUIRED_CSV_COLUMNS = {
+    "ticket_id",
+    "task_title",
+    "task_category",
+    "estimated_hours",
+    "actual_hours_logged",
+    "client_revision_rounds",
+    "files_touched_count",
+    "unplanned_flag",
+}
+
 CATEGORIES = {"frontend", "backend", "devops", "design", "compliance", "database"}
+
+
+def validate_csv_rows(rows: list[dict]) -> None:
+    """Raise ValueError with judge-friendly message on bad CSV shape."""
+    if not rows:
+        raise ValueError("CSV is empty — upload weekly work-log rows.")
+    missing = sorted(REQUIRED_CSV_COLUMNS - set(rows[0].keys()))
+    if missing:
+        raise ValueError(f"CSV missing columns: {', '.join(missing)}. Expected: {', '.join(sorted(REQUIRED_CSV_COLUMNS))}.")
+    for i, r in enumerate(rows, start=2):
+        for col in ("estimated_hours", "actual_hours_logged"):
+            try:
+                float(r.get(col) or 0)
+            except (TypeError, ValueError):
+                raise ValueError(f"Row {i}: column '{col}' must be numeric, got '{r.get(col)}'.")
 
 
 def overrun_ratio(est: float, actual: float) -> float:

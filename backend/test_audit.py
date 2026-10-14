@@ -66,3 +66,19 @@ def test_unknown_project_404():
     r = client.post("/api/projects/nope/audit", files={"file": ("w.csv", b"a,b\n1,2", "text/csv")})
     assert r.status_code == 404
 
+
+def test_bad_csv_missing_columns_400():
+    pid = client.post("/api/projects", data={"project_name": "X", "client_name": "Y", "contracted_hourly_rate": "60"}).json()["project_id"]
+    with open("data/demo_sow_contract.md", "rb") as f:
+        client.post(f"/api/projects/{pid}/sow", files={"file": ("sow.md", f, "text/markdown")})
+    r = client.post(f"/api/projects/{pid}/audit", files={"file": ("bad.csv", b"ticket_id,task_title\n1,hi", "text/csv")})
+    assert r.status_code == 400
+    assert "missing columns" in r.json()["detail"]
+
+
+def test_empty_sow_rejected_400():
+    pid = client.post("/api/projects", data={"project_name": "X", "client_name": "Y", "contracted_hourly_rate": "60"}).json()["project_id"]
+    r = client.post(f"/api/projects/{pid}/sow", files={"file": ("empty.md", b"   ", "text/markdown")})
+    assert r.status_code == 400
+
+
