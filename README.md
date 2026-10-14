@@ -243,3 +243,68 @@ scopeshield/
 
 ---
 
+## 7. TRD — Technical Requirements Document
+
+### 7.1 Database schema + hybrid search (Tiger Data)
+
+Run this DDL once on your Tiger Data Postgres instance. It gives you RRF in pure SQL — no LangChain needed.
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE TABLE projects (
+  project_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_name TEXT NOT NULL,
+  client_name TEXT NOT NULL,
+  contracted_hourly_rate NUMERIC(10,2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE sow_clauses (
+  clause_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID REFERENCES projects(project_id) ON DELETE CASCADE,
+  section_number TEXT NOT NULL,
+  clause_text TEXT NOT NULL,
+  is_exclusion_clause BOOLEAN DEFAULT FALSE,
+  embedding vector(768) NOT NULL,
+  search_tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', clause_text)) STORED
+);
+
+CREATE INDEX idx_sow_embedding ON sow_clauses USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX idx_sow_tsv ON sow_clauses USING gin (search_tsv);
+
+-- Hybrid: vector (semantic) + keyword (tsvector) via RRF
+CREATE OR REPLACE FUNCTION match_sow_clauses_hybrid(
+  p_project_id UUID, query_text TEXT, query_embedding vector(768),
+  match_limit INT DEFAULT 3, rrf_k INT DEFAULT 60
+)
+RETURNS TABLE (clause_id UUID, section_number TEXT, clause_text TEXT,
+  is_exclusion_clause BOOLEAN, semantic_distance FLOAT, rrf_score FLOAT)
+LANGUAGE sql AS $$
+WITH semantic_search AS (
+  SELECT clause_id, embedding <=> query_embedding AS dist,
+    ROW_NUMBER() OVER (ORDER BY embedding <=> query_embedding) AS rank_ix
+  FROM sow_clauses WHERE project_id = p_project_id LIMIT match_limit * 3
+),
+keyword_search AS (
+  SELECT clause_id,
+    ROW_NUMBER() OVER (ORDER BY ts_rank_cd(search_tsv, plainto_tsquery('english', query_text)) DESC) AS rank_ix
+  FROM sow_clauses WHERE project_id = p_project_id
+    AND search_tsv @@ plainto_tsquery('english', query_text) LIMIT match_limit * 3
+)
+SELECT c.clause_id, c.section_number, c.clause_text, c.is_exclusion_clause,
+  COALESCE(s.dist, 1.0)::FLOAT AS semantic_distance,
+  (COALESCE(1.0/(rrf_k+s.rank_ix),0.0)+COALESCE(1.0/(rrf_k+k.rank_ix),0.0))::FLOAT AS rrf_score
+FROM semantic_search s FULL OUTER JOIN keyword_search k USING (clause_id)
+JOIN sow_clauses c ON c.clause_id = COALESCE(s.clause_id, k.clause_id)
+ORDER BY rrf_score DESC LIMIT match_limit;
+$$;
+```
+
+**Chunking rule:** split SOW Markdown/PDF text on `^Section \d+(\.\d+)*` headings. Mark `is_exclusion_clause=TRUE` if heading contains `out of scope / exclusion / not included / assumption`.
+
+**Embedding rule:** 768-d via `nomic-embed-text`. Store once per clause. Query embedding per CSV row = `task_title + notes` (truncate 512 tokens).
+
+---
+
