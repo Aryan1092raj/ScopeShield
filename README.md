@@ -96,3 +96,70 @@ This is the structural proof for the DEV "Side Hustle + Open Innovation" prompt:
 
 ---
 
+## 5. PRD — Product Requirements Document
+
+### 5.1 Goals / Non-goals
+
+**Goals (4.5-day cut):**
+
+- G1: Any freelancer can audit a real week in <30s without OAuth or signup.
+- G2: Every verdict cites an exact SOW clause (section + quote) — no black-box "AI says so."
+- G3: Every OUT_OF_SCOPE line shows math: hours × market rate = recoverable $.
+- G4: One click copies a polite, non-confrontational change-order email + markdown PDF.
+- G5: Judges can run full demo with zero uploads via preloaded sample data.
+
+**Non-goals (explicitly cut):**
+
+- No live OAuth (Jira/Slack/GitHub), no Stripe billing, no multi-tenant auth — zero prize points for login screens.
+- No auto-sending emails to clients, no e-signature, no invoice generation.
+- No multi-project analytics dashboard in v1 — single-project audit only.
+
+### 5.2 Personas + user stories
+
+- **P1 — Solo freelancer (Priya):** "As Priya, I upload my SOW + Linear CSV so I see which 11 hours were unbilled and send a polite change order without sounding greedy."
+- **P2 — Micro-agency owner (2–10 people):** "As an owner, I review my team's weekly ledger so I can defend overages to client finance with clause citations."
+- **P3 — Hackathon judge:** "As a judge with no CSV handy, I click 'Run Real Agency Audit' and see leakage + email in 20 seconds."
+
+Acceptance: P3 path must work offline from preloaded `demo_*` files with no env keys.
+
+### 5.3 Strict scope boundaries (ship order)
+
+| Priority | Feature | Deadline | Justification |
+|---|---|---|---|
+| P0 Must ship | SOW ingestion + Tiger hybrid search | Thu night | Core RAG backbone, Tiger $100 |
+| P0 Must ship | CSV ingestion + TabPFN overrun classifier | Thu night | Tabular differentiator, TabPFN $200 |
+| P0 Must ship | Gemma + Tinker scope judge + generator | Fri noon | Open-AI core, Gemma $200 + Tinker $200 |
+| P0 Must ship | SerpApi live rate lookup | Fri afternoon | Real pricing, SerpApi $100 |
+| P0 Must ship | Sentry tracing + Render + .tech domain | Fri night | Sentry $100 + Render $200 + .tech $100 |
+| P1 Polish | 1-click sample dataset loader | Sat noon | Judges won't have CSVs — critical |
+| Cut | OAuth, Stripe, multi-tenant auth | Do not build | No points, kills velocity |
+
+### 5.4 Functional requirements
+
+- **FR-1 Contract indexing:** accept SOW PDF/Markdown, chunk by numbered clauses, embed 768-d, store dense + tsvector in Tiger Data.
+- **FR-2 Hybrid retrieval:** for each CSV row, return top-3 clauses via RRF (vector cosine + ts_rank_cd).
+- **FR-3 Tabular scoring:** build 9-feature vector per row → TabPFN-3.5 → `scope_leakage_probability` 0.0–1.0 + `predicted_fair_hours`.
+- **FR-4 Rate grounding:** if leakage >0.65, query SerpApi (cached 24h) for hourly/fixed benchmark by task category + region.
+- **FR-5 Verdict + change order:** Tinker-tuned Gemma outputs strict JSON: verdict, clause citation, reasoning, billable delta, email draft. No markdown preamble.
+- **FR-6 Telemetry drawer:** collapsible UI shows per-stage latency, token savings vs GPT-4o, Sentry trace link, model id `gemma-2-9b-tinker-sow-v1`.
+- **FR-7 Demo mode:** `/api/demo/audit` runs full pipeline on bundled sample SOW + CSV with 4 hidden leaks, no upload needed.
+- **FR-8 Export:** download ledger CSV + change-order Markdown/PDF, copy-email button.
+
+### 5.5 UX flow (3 screens max)
+
+1. **Upload:** left = SOW PDF dropzone (shows clause count after parse), right = CSV dropzone (shows row count + column map). Big CTA: "Audit My Week →" + secondary: "Try Instant Demo."
+2. **Ledger:** table with traffic-light verdict pill, hours, leakage bar, matched clause excerpt (expandable), market rate, recoverable $. Top summary cards: total logged, out-of-scope hrs, recoverable $.
+3. **Recover:** generated email preview (editable textarea) + change-order markdown preview + [Copy Email] [Download PDF] + telemetry drawer at bottom.
+
+Empty/error states: bad CSV columns → show expected header template + download sample. No SOW → block audit with friendly nudge.
+
+### 5.6 Success metrics (judge-visible)
+
+- Time-to-value <30s for demo dataset (upload → ledger).
+- 4/4 hidden leaks flagged OUT_OF_SCOPE in demo.
+- Strict JSON validity >95% on holdout (vs ~70% base Gemma).
+- Telemetry shows full 4-span trace in Sentry.
+- User #1 quote: "Would pay $19/mo if it saved one ticket" — capture for DEV post.
+
+---
+
