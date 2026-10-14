@@ -16,6 +16,11 @@ export default function App() {
   const [error, setError] = useState("");
   const [showTele, setShowTele] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [projectName, setProjectName] = useState("BrightKart Website");
+  const [clientName, setClientName] = useState("BrightKart Retail");
+  const [rate, setRate] = useState(60);
+  const [sowFile, setSowFile] = useState(null);
+  const [csvFile, setCsvFile] = useState(null);
 
   async function runDemo() {
     setLoading(true);
@@ -26,6 +31,38 @@ export default function App() {
       setReport(await r.json());
     } catch (e) {
       setError("Backend offline — run: uvicorn backend.main:app --port 8000");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runUpload(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      if (!sowFile || !csvFile) throw new Error("Attach both SOW and CSV first.");
+      const p = await fetch(`${API}/api/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ project_name: projectName, client_name: clientName, contracted_hourly_rate: String(rate) }),
+      });
+      if (!p.ok) throw new Error("project create failed");
+      const { project_id } = await p.json();
+      const sowFd = new FormData();
+      sowFd.append("file", sowFile);
+      const s = await fetch(`${API}/api/projects/${project_id}/sow`, { method: "POST", body: sowFd });
+      if (!s.ok) throw new Error("SOW upload failed — PDF or Markdown only");
+      const csvFd = new FormData();
+      csvFd.append("file", csvFile);
+      const a = await fetch(`${API}/api/projects/${project_id}/audit`, { method: "POST", body: csvFd });
+      if (!a.ok) {
+        const t = await a.text();
+        throw new Error(t.includes("SOW") ? t : "Audit failed — check CSV headers");
+      }
+      setReport(await a.json());
+    } catch (err) {
+      setError(err.message || "Upload failed");
     } finally {
       setLoading(false);
     }
@@ -69,14 +106,23 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8">
-        {!report && !error && (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            <Upload className="mx-auto h-8 w-8 text-slate-400" />
-            <h2 className="mt-3 text-lg font-semibold">Stop working for free</h2>
-            <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
-              Upload a signed SOW + weekly CSV — or hit <b>Run Real Agency Audit</b> to see 4 hidden leaks in 20 seconds.
-            </p>
-          </div>
+        {!report && (
+          <form onSubmit={runUpload} className="rounded-xl border bg-white p-6">
+            <h2 className="flex items-center gap-2 text-lg font-semibold"><Upload className="h-5 w-5" /> Audit your week</h2>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              <label className="text-xs font-semibold">Project<input value={projectName} onChange={(e) => setProjectName(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" /></label>
+              <label className="text-xs font-semibold">Client<input value={clientName} onChange={(e) => setClientName(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" /></label>
+              <label className="text-xs font-semibold">Rate $/hr<input type="number" value={rate} onChange={(e) => setRate(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" /></label>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="rounded-lg border border-dashed p-4 text-xs font-semibold">SOW PDF / Markdown<input type="file" accept=".pdf,.md" onChange={(e) => setSowFile(e.target.files[0])} className="mt-2 block text-xs font-normal" /></label>
+              <label className="rounded-lg border border-dashed p-4 text-xs font-semibold">Work-log CSV<input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files[0])} className="mt-2 block text-xs font-normal" /></label>
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <button disabled={loading} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{loading ? "Auditing…" : "Audit My Week →"}</button>
+              <span className="text-xs text-slate-500">or hit <b>Run Real Agency Audit</b> above for the 1-click judge demo</span>
+            </div>
+          </form>
         )}
         {error && <p className="rounded-lg bg-red-50 p-4 text-sm text-red-700">{error}</p>}
 
