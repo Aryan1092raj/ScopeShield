@@ -379,3 +379,80 @@ Embed this table + confusion matrix in DEV post — it's your Gemma+Tinker prize
 
 ---
 
+### 7.4 Strict API contract (Pydantic v2)
+
+```python
+from pydantic import BaseModel, Field
+from typing import List, Literal
+
+class SOWClauseMatch(BaseModel):
+    section_number: str
+    clause_text: str
+    semantic_distance: float
+    rrf_score: float
+
+class AuditedWorkItem(BaseModel):
+    ticket_id: str
+    task_title: str
+    actual_hours: float
+    tabpfn_leakage_probability: float = Field(..., ge=0.0, le=1.0)
+    verdict: Literal["IN_SCOPE", "GREY_AREA", "OUT_OF_SCOPE"]
+    violated_or_matched_clause: str
+    contractual_reasoning: str
+    market_hourly_rate_usd: float
+    recoverable_amount_usd: float
+
+class AuditReportResponse(BaseModel):
+    project_name: str
+    total_hours_logged: float
+    out_of_scope_hours: float
+    total_recoverable_revenue_usd: float
+    items: List[AuditedWorkItem]
+    change_order_markdown: str
+    telemetry: dict  # sentry trace id, latency, open vs closed cost math
+```
+
+**Endpoints:**
+
+- `POST /api/projects` — create project (name, client, rate).
+- `POST /api/projects/{id}/sow` — multipart PDF/md → returns `{clauses_indexed}`.
+- `POST /api/projects/{id}/audit` — multipart CSV → returns `AuditReportResponse`.
+- `GET /api/demo/audit` — no-upload judge path, runs bundled demo files.
+- `GET /api/health` — `{tiger_ok, tabpfn_ok, gemma_model, serp_ok}` for Render checks.
+
+### 7.5 Sentry agent tracing
+
+Wrap each stage so the waterfall is screenshot-ready for the DEV post:
+
+```python
+import sentry_sdk
+
+async def run_scopeshield_audit(project_id: str, csv_rows: list):
+    with sentry_sdk.start_transaction(op="ai.agent.audit", name="ScopeShield_Full_Audit") as txn:
+        with sentry_sdk.start_span(op="db.vector.hybrid_rrf", description="Tiger Hybrid Retrieval") as s1:
+            matched = await retrieve_hybrid_sow_clauses(project_id, csv_rows)
+            s1.set_data("rows_processed", len(csv_rows))
+        with sentry_sdk.start_span(op="ai.tabular.tabpfn", description="TabPFN Scoring") as s2:
+            scores = run_tabpfn_inference(csv_rows, matched)
+            s2.set_data("flagged", sum(1 for s in scores if s > 0.65))
+        with sentry_sdk.start_span(op="tool.serpapi.rates", description="SerpApi Rates") as s3:
+            rates = await fetch_live_market_rates(csv_rows, scores)
+            s3.set_data("queries", len(rates))
+        with sentry_sdk.start_span(op="ai.llm.gemma_tinker", description="Gemma Synthesis") as s4:
+            result = await synthesize_with_gemma(csv_rows, matched, scores, rates)
+            s4.set_data("model", "gemma-2-9b-tinker-sow-v1")
+        return build_final_response(result, txn.trace_id)
+```
+
+Init with `sentry_sdk.init(dsn=..., traces_sample_rate=1.0, ai_monitoring=True)`. UI drawer links `https://<org>.sentry.io/traces/{trace_id}`.
+
+### 7.6 SerpApi rate grounding (cached)
+
+- Query: `"freelance {category} developer hourly rate 2026"` + optional `location=United States` / `India`.
+- Parse `organic_results[].snippet` for `$X–$Y/hr` via regex; median of top-3 = `market_hourly_rate_usd`.
+- Cache key `rate:{category}:{region}` TTL 24h (in-memory dict v1, Redis later).
+- Fallback table if quota hit: frontend 55, backend 70, devops 85, design 50, compliance 90, database 75 (USD/hr).
+- Show citation link under each recoverable $ — judges love receipts.
+
+---
+
