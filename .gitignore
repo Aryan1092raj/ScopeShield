@@ -1,0 +1,40 @@
+# ScopeShield — track only README for now
+# Only README.md (+ this file) goes to GitHub.
+# Everything else stays local until code phase.
+
+# Ignore everything by default
+*
+!*/
+!.gitignore
+!README.md
+
+# Explicitly ignore other markdowns (per request)
+ps.md
+docs/
+*.md
+!README.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Data / secrets (never commit)
+*.csv
+*.pdf
+*.db
+*.sqlite
+
